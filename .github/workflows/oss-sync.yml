@@ -1,0 +1,33 @@
+name: Sync site to Aliyun OSS
+on:
+  push:
+    branches: [main]
+    paths: ["site/**"]
+  workflow_dispatch:
+    inputs:
+      delete_orphans:
+        description: 删除 OSS 上已不在 site/ 中的旧文件
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: oss-sync
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Upload site to OSS
+        env:
+          OSS_AK: ${{ secrets.OSS_AK }}
+          OSS_SK: ${{ secrets.OSS_SK }}
+          OSS_BUCKET: bahe-prd
+          OSS_REGION: cn-shanghai
+          OSS_PREFIX: smart-import-workbench-web
+          OSS_SYNC_DELETE: ${{ inputs.delete_orphans }}
+        run: node scripts/oss_sync.mjs
